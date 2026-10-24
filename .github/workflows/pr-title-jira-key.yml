@@ -19,9 +19,11 @@ jobs:
           JIRA_KEYS: ${{ vars.JIRA_KEYS }}
         run: |
           if [ -z "$JIRA_KEYS" ]; then echo "::error title=JIRA_KEYS unset::Repo variable JIRA_KEYS is empty."; exit 1; fi
-          if printf '%s' "$TITLE" | grep -Eq "(^|[^A-Za-z0-9])(${JIRA_KEYS//,/|})-[0-9]+(\$|[^0-9])"; then
+          K="${JIRA_KEYS//[[:space:]]/}"
+          [[ "$K" =~ ^[A-Z][A-Z0-9]+(,[A-Z][A-Z0-9]+)*$ ]] || { echo "::error title=JIRA_KEYS invalid::Repo variable JIRA_KEYS must be comma-separated keys like GENENG,INSIGHTS."; exit 1; }
+          if printf '%s' "$TITLE" | grep -Eq "(^|[^A-Za-z0-9])(${K//,/|})-[0-9]+(\$|[^A-Za-z0-9])"; then
             echo "OK: PR title contains a Jira key."
           else
-            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (one of: $JIRA_KEYS). Edit the title to re-run."
+            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (one of: $K). Edit the title to re-run."
             exit 1
           fi
