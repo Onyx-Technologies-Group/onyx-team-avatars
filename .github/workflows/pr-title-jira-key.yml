@@ -1,0 +1,24 @@
+name: PR title Jira key
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+jobs:
+  jira-key:
+    name: PR title has Jira key
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if printf '%s' "$TITLE" | grep -Eq '[A-Z]+-[0-9]+'; then
+            echo "OK: PR title contains a Jira key."
+          else
+            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (pattern [A-Z]+-[0-9]+). Edit the title to re-run."
+            exit 1
+          fi
