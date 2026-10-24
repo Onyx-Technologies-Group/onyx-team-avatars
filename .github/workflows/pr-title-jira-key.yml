@@ -12,13 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      # JIRA_KEYS is a per-repo Actions variable; when a new Jira project is created, add its key to JIRA_KEYS in every repo.
       - name: Check title
         env:
           TITLE: ${{ github.event.pull_request.title }}
+          JIRA_KEYS: ${{ vars.JIRA_KEYS }}
         run: |
-          if printf '%s' "$TITLE" | grep -Eq '[A-Z]+-[0-9]+'; then
+          if [ -z "$JIRA_KEYS" ]; then echo "::error title=JIRA_KEYS unset::Repo variable JIRA_KEYS is empty."; exit 1; fi
+          K="${JIRA_KEYS//[[:space:]]/}"
+          [[ "$K" =~ ^[A-Z][A-Z0-9]+(,[A-Z][A-Z0-9]+)*$ ]] || { echo "::error title=JIRA_KEYS invalid::Repo variable JIRA_KEYS must be comma-separated keys like GENENG,INSIGHTS."; exit 1; }
+          if printf '%s' "$TITLE" | grep -Eq "(^|[^A-Za-z0-9])(${K//,/|})-[0-9]+(\$|[^A-Za-z0-9])"; then
             echo "OK: PR title contains a Jira key."
           else
-            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (pattern [A-Z]+-[0-9]+). Edit the title to re-run."
+            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (one of: $K). Edit the title to re-run."
             exit 1
           fi
