@@ -15,10 +15,12 @@ jobs:
       - name: Check title
         env:
           TITLE: ${{ github.event.pull_request.title }}
+          JIRA_KEYS: ${{ vars.JIRA_KEYS }}
         run: |
-          if printf '%s' "$TITLE" | grep -Eq '(^|[^A-Za-z0-9])[A-Z][A-Z0-9]+-[0-9]+($|[^0-9])'; then
+          if [ -z "$JIRA_KEYS" ]; then echo "::error title=JIRA_KEYS unset::Org variable JIRA_KEYS is empty."; exit 1; fi
+          if printf '%s' "$TITLE" | grep -Eq "(^|[^A-Za-z0-9])(${JIRA_KEYS//,/|})-[0-9]+(\$|[^0-9])"; then
             echo "OK: PR title contains a Jira key."
           else
-            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (pattern [A-Z][A-Z0-9]+-[0-9]+ as a whole word). Edit the title to re-run."
+            echo "::error title=Missing Jira key::PR title must contain a Jira key like GENENG-26 (one of: $JIRA_KEYS). Edit the title to re-run."
             exit 1
           fi
